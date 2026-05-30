@@ -4,10 +4,12 @@ from parser.document_builder import DocumentBuilder
 from pipeline.text_pipeline import TextPipeline
 from pipeline.image_pipeline import ImagePipeline
 
-from retriever.retriever import Retriever 
+from retriever.text_retriever import TextRetriever 
 from rag.context_builder import ContextBuilder
 from retriever.image_retriever import ImageRetriever
 from rag.prompt_builder import PromptBuilder 
+from retriever.hybrid_retriever import HybridRetriever
+
 
 from pathlib import Path 
 
@@ -68,40 +70,58 @@ def main():
     print(f"Stored {image_count} images")
 
 
-    retriever=Retriever()
+    # retriever=Retriever()
 
-    results=retriever.search("What is multihead attention?")
+    # results=retriever.search("What is multihead attention?")
 
-    context_builder=ContextBuilder()
+    # context_builder=ContextBuilder()
 
-    context=context_builder.build_context(results)
+    # context=context_builder.build_context(results)
     
-    prompt_builder=PromptBuilder()
+    # prompt_builder=PromptBuilder()
 
-    prompt=prompt_builder.build_prompt(question="What is multi-head attention",context=context)
+    # prompt=prompt_builder.build_prompt(question="What is multi-head attention",context=context)
 
-    print("###################### PROMPT ###########################")
+    # print("###################### PROMPT ###########################")
 
-    print(prompt)
-    query_vec = image_pipeline.embedder.embed_text(
-        "multi head attention"
-    )
-
-    # print(
-    #     len(query_vec)
+    # print(prompt)
+    # query_vec = image_pipeline.embedder.embed_text(
+    #     "multi head attention"
     # )
 
-    image_retriever = ImageRetriever()
+    # # print(
+    # #     len(query_vec)
+    # # )
 
-    results = image_retriever.search(
-        "multi head attention"
+    # image_retriever = ImageRetriever()
+
+    # results = image_retriever.search(
+    #     "multi head attention"
+    # )
+
+    # print("############### RESULTS ###########")
+
+    # for r in results:
+    #     print("\n")
+    #     print(r)
+
+    hybrid_retriever = HybridRetriever()
+
+    results = hybrid_retriever.search(
+        "What is multi-head attention?"
     )
 
-    print("############### RESULTS ###########")
+    print("\nTEXT RESULTS")
+    print("=" * 50)
 
-    for r in results:
-        print("\n")
-        print(r)
+    for item in results["text_results"]:
+        print(item)
+
+    print("\nIMAGE RESULTS")
+    print("=" * 50)
+
+    for item in results["image_results"]:
+        print(item)
 
 
 if __name__=="__main__":

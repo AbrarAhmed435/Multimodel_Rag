@@ -1,7 +1,7 @@
 from embeddings.embedder import Embedder
 from vectorstore.chroma_store import ChromaStore
 
-class Retriever:
+class TextRetriever:
 
     def __init__(self):
         self.embedder=Embedder()

@@ -30,16 +30,24 @@ class PDFParser:
         import os 
         os.makedirs(output_dir,exist_ok=True)
         extracted_images=[]
+        pdf_name = Path(self.pdf_path).stem
+        seen_xrefs = set()
+
         for page_num,page in enumerate(self.doc):
             image_list=page.get_images(full=True)
 
             for img_index, img in enumerate(image_list):
                 xref=img[0]
+                if xref in seen_xrefs:
+                    continue
+
+                seen_xrefs.add(xref)
+                
                 base_image=self.doc.extract_image(xref)
                 image_bytes=base_image["image"]
                 image_ext=base_image["ext"]
 
-                image_filename=(f"page_{page_num+1}_img_{img_index+1}.{image_ext}")
+                image_filename=(f"{pdf_name}_page_{page_num+1}_img_{img_index+1}.{image_ext}")
 
                 image_path=os.path.join(output_dir,image_filename)
 
@@ -50,13 +58,6 @@ class PDFParser:
 
                 bbox=[]
 
-                # for rect in rects:
-                #     bboxes.append({
-                #         "x0":rect.x0,
-                #         "y0":rect.y0,
-                #         "x1":rect.x1,
-                #         "y1":rect.y1
-                #     })
                 if rects:
                     rect=rects[0]
 
