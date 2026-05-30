@@ -40,3 +40,28 @@ class ImageEmbedder:
         image_features=torch.nn.functional.normalize(image_features,p=2,dim=1)
 
         return (image_features.cpu().numpy()[0].tolist())
+
+    
+
+    @torch.no_grad()
+    def embed_text(self,text):
+
+        inputs=self.processor(text=text,return_tensors="pt",padding=True,truncation=True)
+
+        inputs={
+            k: v.to(self.device)
+            for k, v in inputs.items()
+        }
+
+        text_features=self.model.get_text_features(**inputs)
+
+        if not isinstance(text_features,torch.Tensor):
+            text_features=(text_features.pooler_output)
+
+        text_features=(torch.nn.functional.normalize(text_features,p=2,dim=1))
+
+        return (text_features.cpu().numpy()[0].tolist())
+
+
+
+
