@@ -1,21 +1,38 @@
 class ContextBuilder:
-    def build_context(self,retrieved_docs):
+    
+    def build_context(self,hybrid_results):
+        text_results=hybrid_results["text_results"]
+        image_results=hybrid_results["image_results"]
+
         context_parts=[]
-        for idx,doc in enumerate(retrieved_docs,start=1):
-            page=doc["metadata"].get("page","unknown")
+        image_paths=[]
 
-            doc_type=doc["metadata"].get("type","unknown")
 
-            content=doc["content"]
 
-            chunk=f"""
-            [Chunk {idx}]
-            Page: {page}
-            Type: {doc_type}
+        for idx,result in enumerate(text_results,start=1):
+            context_parts.append(f"""
+            [Chunks {idx}]
+            Page: {result["metadata"]["page"]}
+            Type: {result["metadata"]["type"]}
 
-            {content}
-            """
+            {result["content"]}
 
-            context_parts.append(chunk)
+            """)
 
-        return "\n".join(context_parts)
+
+        seen_paths=set() 
+
+        for image in image_results:
+
+            path=image["image_path"]
+
+            if path in seen_paths:
+                continue
+
+            seen_paths.add(path)
+
+            image_paths.append(path)
+
+            context_text="\n".join(context_parts)
+
+            return context_text,image_paths[:3]

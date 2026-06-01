@@ -1,131 +1,161 @@
+from pathlib import Path
+
 from parser.pdf_parser import PDFParser
-from parser.document_builder import DocumentBuilder 
+from parser.document_builder import DocumentBuilder
 
 from pipeline.text_pipeline import TextPipeline
 from pipeline.image_pipeline import ImagePipeline
 
-from retriever.text_retriever import TextRetriever 
-from rag.context_builder import ContextBuilder
-from retriever.image_retriever import ImageRetriever
-from rag.prompt_builder import PromptBuilder 
 from retriever.hybrid_retriever import HybridRetriever
 
+from rag.context_builder import ContextBuilder
+from rag.prompt_builder import PromptBuilder
 
-from pathlib import Path 
+
+from llm.qwen_vl import QwenVL
+
+
 
 
 def main():
 
-    pdf_path="app/data/attention.pdf"
+    # =====================================
+    # CONFIG
+    # =====================================
 
-    document_name=Path(pdf_path).stem
+    pdf_path = "app/data/attention.pdf"
+    document_name = Path(pdf_path).stem
 
+    # =====================================
+    # PARSE PDF
+    # =====================================
 
-    parser=PDFParser(pdf_path)
+    parser = PDFParser(pdf_path)
 
-    print("Extracting text blocks....")
+    print("Extracting text blocks...")
+    text_data = parser.extract_text_blocks()
 
-    text_data=parser.extract_text_blocks()
+    print("Extracting images...")
+    image_data = parser.extract_images()
 
-    print("Extracting images... ")
-    image_data=parser.extract_images()
+    print("Matching captions...")
+    matched_captions = parser.match_captions(
+        text_data,
+        image_data
+    )
 
-    print("Matching figure captions...")
-    matched_captions=parser.match_captions(text_data,image_data)
+    # =====================================
+    # BUILD ELEMENTS
+    # =====================================
 
-    
+    builder = DocumentBuilder()
 
-    builder=DocumentBuilder()
+    text_elements = builder.build_text_elements(
+        text_data,
+        document_name
+    )
 
-    print("Building text elements....")
+    figure_elements = builder.build_figure_elements(
+        matched_captions,
+        document_name
+    )
 
-    text_elements=builder.build_text_elements(text_data,document_name)
+    print(
+        f"Text Elements: {len(text_elements)}"
+    )
 
+    print(
+        f"Figure Elements: {len(figure_elements)}"
+    )
 
-    print("Building figure element....")
+    # =====================================
+    # INGEST TEXT
+    # =====================================
 
-    figure_elements=builder.build_figure_elements(matched_captions,document_name)
+    text_pipeline = TextPipeline()
 
-    print("\n################ COUNTS ###############\n")
-    print(f"Text Elements: {len(text_elements)}")
+    text_count = text_pipeline.ingest(
+        text_elements,
+        figure_elements
+    )
 
-    print(f"Figure Elements: {len(figure_elements)}")
+    print(
+        f"Stored {text_count} text records"
+    )
 
+    # =====================================
+    # INGEST IMAGES
+    # =====================================
 
-    text_pipeline=TextPipeline()
+    image_pipeline = ImagePipeline()
 
-    text_count=text_pipeline.ingest(text_elements,figure_elements)
+    image_count = image_pipeline.ingest_images(
+        figure_elements
+    )
 
-    print(f"Stored {text_count} text records")
+    print(
+        f"Stored {image_count} images"
+    )
 
-    image_pipeline=ImagePipeline()
+    # =====================================
+    # RETRIEVAL
+    # =====================================
 
-    image_count=image_pipeline.ingest_images(figure_elements)
-
-    
-    print("IMAGE PIPELINE STORE COLLECTION COUNT \n")
-    print(image_pipeline.store.collection.count())
-
-
-    print(f"Stored {image_count} images")
-
-
-    # retriever=Retriever()
-
-    # results=retriever.search("What is multihead attention?")
-
-    # context_builder=ContextBuilder()
-
-    # context=context_builder.build_context(results)
-    
-    # prompt_builder=PromptBuilder()
-
-    # prompt=prompt_builder.build_prompt(question="What is multi-head attention",context=context)
-
-    # print("###################### PROMPT ###########################")
-
-    # print(prompt)
-    # query_vec = image_pipeline.embedder.embed_text(
-    #     "multi head attention"
-    # )
-
-    # # print(
-    # #     len(query_vec)
-    # # )
-
-    # image_retriever = ImageRetriever()
-
-    # results = image_retriever.search(
-    #     "multi head attention"
-    # )
-
-    # print("############### RESULTS ###########")
-
-    # for r in results:
-    #     print("\n")
-    #     print(r)
+    query = "What is multi-head attention?"
 
     hybrid_retriever = HybridRetriever()
 
     results = hybrid_retriever.search(
-        "What is multi-head attention?"
+        query
     )
 
-    print("\nTEXT RESULTS")
-    print("=" * 50)
+    # =====================================
+    # BUILD CONTEXT
+    # =====================================
 
-    for item in results["text_results"]:
-        print(item)
+    context_builder = ContextBuilder()
 
-    print("\nIMAGE RESULTS")
-    print("=" * 50)
+    context_text, image_paths = context_builder.build_context(results)
 
-    for item in results["image_results"]:
-        print(item)
+    qwen=QwenVL()
+
+    answer=qwen.generate_answer(question=query,context_text=context_text,image_paths=image_paths)
+
+    # =====================================
+    # BUILD PROMPT
+    # =====================================
+
+    # prompt_builder = PromptBuilder()
+
+    # prompt = prompt_builder.build_prompt(
+    #     question=query,
+    #     context=context_text
+    # )
+
+    print(answer)
+
+    # =====================================
+    # OUTPUT
+    # =====================================
+    # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+
+    # print(context_text)
+
+    # print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+
+    # print("\n" + "=" * 60)
+    # print("PROMPT")
+    # print("=" * 60)
+
+    # print(prompt)
+
+    # print("\n" + "=" * 60)
+    # print("IMAGES")
+    # print("=" * 60)
+
+    # for path in image_paths:
+    #     print(path)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
-
-
-

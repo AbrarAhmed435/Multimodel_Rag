@@ -38,6 +38,9 @@ class PDFParser:
 
             for img_index, img in enumerate(image_list):
                 xref=img[0]
+
+                print(f"Page={page_num+1}\n xref={xref}")
+
                 if xref in seen_xrefs:
                     continue
 
