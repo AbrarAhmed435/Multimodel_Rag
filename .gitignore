@@ -98,5 +98,9 @@ app/data/*.pdf
 *.jpg
 *.jpeg
 
-# But keep static assets if needed
-#!assets/*.png
+
+# Allow project assets
+!assets/
+!assets/*.png
+!assets/*.jpg
+!assets/*.jpeg
